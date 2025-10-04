@@ -1,0 +1,4 @@
+ALTER TABLE poll_options
+    DROP CONSTRAINT FK_POLL_OPTIONS_ON_POLL;
+
+DROP TABLE poll_options;
