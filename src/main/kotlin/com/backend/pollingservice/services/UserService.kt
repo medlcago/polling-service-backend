@@ -1,8 +1,7 @@
 package com.backend.pollingservice.services
 
 import com.backend.pollingservice.repositories.UserRepository
-import org.springframework.security.core.authority.SimpleGrantedAuthority
-import org.springframework.security.core.userdetails.UserDetails
+import com.backend.pollingservice.user.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Service
@@ -12,12 +11,8 @@ class UserService(
     private val userRepository: UserRepository,
 ) : UserDetailsService {
     @Throws(UsernameNotFoundException::class)
-    override fun loadUserByUsername(username: String): UserDetails {
+    override fun loadUserByUsername(username: String): org.springframework.security.core.userdetails.UserDetails {
         val user = userRepository.findByUsername(username) ?: throw UsernameNotFoundException("User not found")
-        return org.springframework.security.core.userdetails.User(
-            user.username,
-            user.password,
-            listOf(SimpleGrantedAuthority("USER"))
-        )
+        return UserDetails(user)
     }
 }
