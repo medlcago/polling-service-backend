@@ -1,6 +1,7 @@
 package com.backend.pollingservice.entities
 
 import jakarta.persistence.*
+import org.hibernate.annotations.Formula
 import org.hibernate.annotations.UuidGenerator
 import java.util.*
 
@@ -28,6 +29,8 @@ class PollOption(
     var poll: Poll,
 
     @OneToMany(mappedBy = "option", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
-    var votes: MutableList<Vote> = mutableListOf()
+    var votes: MutableList<Vote> = mutableListOf(),
 
+    @Formula("(SELECT COUNT(v.id) FROM votes v WHERE v.option_id = id)")
+    var voteCount: Long = 0
 )

@@ -5,6 +5,7 @@ import com.backend.pollingservice.extensions.sendJsonResponse
 import com.backend.pollingservice.services.UserService
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.authentication.AuthenticationManager
@@ -43,7 +44,8 @@ class SecurityConfiguration(
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests {
-                it.anyRequest().permitAll()
+                it.requestMatchers(HttpMethod.POST, "/api/v1/polls").authenticated()
+                    .anyRequest().permitAll()
             }.exceptionHandling {
                 it.authenticationEntryPoint { _, response, authException ->
                     val apiResponse = ApiResponse.error(
