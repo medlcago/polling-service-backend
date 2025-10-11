@@ -1,18 +1,20 @@
 package com.backend.pollingservice.controllers.v1
 
-import com.backend.pollingservice.dto.ApiResponse
-import com.backend.pollingservice.dto.CreatePollRequest
-import com.backend.pollingservice.dto.PollResponse
+import com.backend.pollingservice.dto.*
 import com.backend.pollingservice.services.PollService
 import com.backend.pollingservice.user.UserDetails
 import jakarta.validation.Valid
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Min
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import java.util.*
 
 @RestController
 @RequestMapping("/api/v1/polls")
+@Validated
 class PollControllerV1(
     private val pollService: PollService,
 ) {
@@ -30,8 +32,11 @@ class PollControllerV1(
     }
 
     @GetMapping
-    fun getPolls(): ApiResponse<List<PollResponse>> {
-        val polls = pollService.getPolls()
+    fun getPolls(
+        @RequestParam("limit", defaultValue = "10") @Min(1) @Max(100) limit: Int,
+        @RequestParam("offset", defaultValue = "0") @Min(0) offset: Int,
+    ): ApiResponse<PaginatedResponse<PollResponse>> {
+        val polls = pollService.getPolls(limit, offset)
         return ApiResponse.success(polls)
     }
 
@@ -39,5 +44,42 @@ class PollControllerV1(
     fun getPoll(@PathVariable pollId: UUID): ApiResponse<PollResponse> {
         val poll = pollService.getPoll(pollId)
         return ApiResponse.success(poll)
+    }
+
+    @PostMapping("/{pollId}/close")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun closePoll(
+        @PathVariable pollId: UUID,
+        @AuthenticationPrincipal user: UserDetails,
+    ) {
+        pollService.closePoll(user.getUser(), pollId)
+    }
+
+    @PostMapping("/{pollId}/vote")
+    fun votePoll(
+        @PathVariable pollId: UUID,
+        @AuthenticationPrincipal user: UserDetails,
+        @Valid @RequestBody request: VotePollRequest,
+    ): ApiResponse<PollResponse> {
+        val poll = pollService.votePoll(user.getUser(), pollId, request)
+        return ApiResponse.success(poll)
+    }
+
+    @PostMapping("/{pollId}/retract")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun retractVote(
+        @PathVariable pollId: UUID,
+        @AuthenticationPrincipal user: UserDetails,
+    ) {
+        pollService.retractVote(user.getUser(), pollId)
+    }
+
+    @DeleteMapping("/{pollId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deletePoll(
+        @PathVariable pollId: UUID,
+        @AuthenticationPrincipal user: UserDetails
+    ) {
+        pollService.deletePoll(user.getUser(), pollId)
     }
 }

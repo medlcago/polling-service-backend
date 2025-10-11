@@ -11,7 +11,7 @@ import jakarta.validation.constraints.Size
 import java.time.Instant
 import java.util.*
 
-data class PollOption(
+data class PollOptionRequest(
     @field:NotBlank(message = "Option text cannot be blank")
     val text: String,
 
@@ -30,7 +30,7 @@ data class CreatePollRequest(
 
     @field:Valid
     @field:Size(min = 2, max = 10, message = "Poll must have between 2 and 10 options")
-    val options: MutableList<PollOption>,
+    val options: List<PollOptionRequest>,
 )
 
 
@@ -62,7 +62,7 @@ data class PollResponse(
     @get:JsonProperty("updated_at")
     val updatedAt: Instant,
 
-    val options: MutableList<PollOptionResponse>,
+    val options: List<PollOptionResponse>,
 ) {
     companion object {
         fun fromPoll(poll: Poll): PollResponse {
@@ -93,3 +93,8 @@ data class PollResponse(
         }
     }
 }
+
+data class VotePollRequest(
+    @field:Size(min = 1, max = 10)
+    val options: List<UUID>,
+)

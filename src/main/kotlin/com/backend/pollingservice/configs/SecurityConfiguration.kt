@@ -44,7 +44,7 @@ class SecurityConfiguration(
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests {
-                it.requestMatchers(HttpMethod.POST, "/api/v1/polls").authenticated()
+                it.requestMatchers(HttpMethod.POST, "/api/v1/polls/**").authenticated()
                     .anyRequest().permitAll()
             }.exceptionHandling {
                 it.authenticationEntryPoint { _, response, authException ->
