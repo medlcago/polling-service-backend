@@ -2,11 +2,14 @@ package com.backend.pollingservice.controllers
 
 import com.backend.pollingservice.dto.ApiResponse
 import com.backend.pollingservice.exceptions.APIException
+import jakarta.validation.ConstraintViolationException
 import org.springframework.beans.TypeMismatchException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
+import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.ServletRequestBindingException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.servlet.resource.NoResourceFoundException
@@ -34,7 +37,7 @@ class ExceptionHandler {
     }
 
     @ExceptionHandler(TypeMismatchException::class)
-    fun handleMethodArgumentTypeMismatchException(): ResponseEntity<ApiResponse<Nothing>> {
+    fun handleTypeMismatchException(): ResponseEntity<ApiResponse<Nothing>> {
         return ResponseEntity.badRequest().body(
             ApiResponse.error(
                 message = HttpStatus.BAD_REQUEST.reasonPhrase,
@@ -64,6 +67,36 @@ class ExceptionHandler {
                 message = HttpStatus.BAD_REQUEST.reasonPhrase,
                 errorCode = HttpStatus.BAD_REQUEST.name,
                 errors = errors
+            )
+        )
+    }
+
+    @ExceptionHandler(ConstraintViolationException::class)
+    fun handleConstraintViolationException(): ResponseEntity<ApiResponse<Nothing>> {
+        return ResponseEntity.badRequest().body(
+            ApiResponse.error(
+                message = HttpStatus.BAD_REQUEST.reasonPhrase,
+                errorCode = HttpStatus.BAD_REQUEST.name,
+            )
+        )
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException::class)
+    fun handleHttpRequestMethodNotSupportedException(exp: HttpRequestMethodNotSupportedException): ResponseEntity<ApiResponse<Nothing>> {
+        return ResponseEntity.status(exp.statusCode).body(
+            ApiResponse.error(
+                message = exp.message,
+                errorCode = HttpStatus.METHOD_NOT_ALLOWED.name
+            )
+        )
+    }
+
+    @ExceptionHandler(ServletRequestBindingException::class)
+    fun handleServletRequestBindingException(exp: ServletRequestBindingException): ResponseEntity<ApiResponse<Nothing>> {
+        return ResponseEntity.badRequest().body(
+            ApiResponse.error(
+                message = exp.message,
+                errorCode = HttpStatus.BAD_REQUEST.name,
             )
         )
     }
