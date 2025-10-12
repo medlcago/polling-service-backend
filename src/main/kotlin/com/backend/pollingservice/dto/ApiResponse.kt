@@ -3,17 +3,19 @@ package com.backend.pollingservice.dto
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 
-data class ApiResponse<T>(
+data class ApiResponse<out T>(
     val ok: Boolean,
 
-    @field:JsonProperty("error_code")
+    @get:JsonProperty("error_code")
+    @get:JsonInclude(JsonInclude.Include.NON_NULL)
     val errorCode: String? = null,
 
     val data: T? = null,
 
+    @get:JsonInclude(JsonInclude.Include.NON_NULL)
     val message: String? = null,
 
-    @field:JsonInclude(JsonInclude.Include.NON_NULL)
+    @get:JsonInclude(JsonInclude.Include.NON_NULL)
     val errors: Map<String, String>? = null
 ) {
     companion object {

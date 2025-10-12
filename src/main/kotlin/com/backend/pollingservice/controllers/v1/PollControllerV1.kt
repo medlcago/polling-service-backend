@@ -2,7 +2,7 @@ package com.backend.pollingservice.controllers.v1
 
 import com.backend.pollingservice.dto.*
 import com.backend.pollingservice.services.PollService
-import com.backend.pollingservice.user.UserDetails
+import com.backend.pollingservice.security.UserDetails
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min

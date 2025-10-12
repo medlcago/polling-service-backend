@@ -1,4 +1,4 @@
-package com.backend.pollingservice.user
+package com.backend.pollingservice.security
 
 import com.backend.pollingservice.entities.User
 import org.springframework.security.core.GrantedAuthority

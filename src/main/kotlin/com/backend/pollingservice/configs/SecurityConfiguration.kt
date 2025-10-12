@@ -73,9 +73,9 @@ class SecurityConfiguration(
                     )
                 }
             }.formLogin { it.disable() }.httpBasic {
-                it.authenticationEntryPoint { _, response, _ ->
+                it.authenticationEntryPoint { _, response, authExp ->
                     val apiResponse = ApiResponse.error(
-                        message = HttpStatus.UNAUTHORIZED.toString(),
+                        message = authExp.message,
                         errorCode = HttpStatus.UNAUTHORIZED.name
                     )
 

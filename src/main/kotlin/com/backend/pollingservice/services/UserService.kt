@@ -1,7 +1,7 @@
 package com.backend.pollingservice.services
 
 import com.backend.pollingservice.repositories.UserRepository
-import com.backend.pollingservice.user.UserDetails
+import com.backend.pollingservice.security.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Service
