@@ -35,14 +35,15 @@ class PollControllerV1(
     fun getPolls(
         @RequestParam("limit", defaultValue = "10") @Min(1) @Max(100) limit: Int,
         @RequestParam("offset", defaultValue = "0") @Min(0) offset: Int,
+        @AuthenticationPrincipal user: UserDetails?,
     ): ApiResponse<PaginatedResponse<PollResponse>> {
-        val polls = pollService.getPolls(limit, offset)
+        val polls = pollService.getPolls(limit, offset, user?.getUser())
         return ApiResponse.success(polls)
     }
 
     @GetMapping("/{pollId}")
-    fun getPoll(@PathVariable pollId: UUID): ApiResponse<PollResponse> {
-        val poll = pollService.getPoll(pollId)
+    fun getPoll(@PathVariable pollId: UUID, @AuthenticationPrincipal user: UserDetails?): ApiResponse<PollResponse> {
+        val poll = pollService.getPoll(pollId, user?.getUser())
         return ApiResponse.success(poll)
     }
 
@@ -56,13 +57,13 @@ class PollControllerV1(
     }
 
     @PostMapping("/{pollId}/vote")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     fun votePoll(
         @PathVariable pollId: UUID,
         @AuthenticationPrincipal user: UserDetails,
         @Valid @RequestBody request: VotePollRequest,
-    ): ApiResponse<PollResponse> {
-        val poll = pollService.votePoll(user.getUser(), pollId, request)
-        return ApiResponse.success(poll)
+    ) {
+        pollService.votePoll(user.getUser(), pollId, request)
     }
 
     @PostMapping("/{pollId}/retract")

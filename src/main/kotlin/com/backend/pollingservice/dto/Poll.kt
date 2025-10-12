@@ -63,9 +63,12 @@ data class PollResponse(
     val updatedAt: Instant,
 
     val options: List<PollOptionResponse>,
+
+    @get:JsonProperty("user_selected_options")
+    val userSelectedOptions: List<UUID>,
 ) {
     companion object {
-        fun fromPoll(poll: Poll): PollResponse {
+        fun fromPoll(poll: Poll, selectedOptionIds: List<UUID>): PollResponse {
             return PollResponse(
                 id = poll.id!!,
                 question = poll.question,
@@ -82,14 +85,9 @@ data class PollResponse(
                         isCorrect = it.isCorrect,
                         voteCount = it.voteCount,
                     )
-                }.toMutableList()
+                },
+                userSelectedOptions = selectedOptionIds,
             )
-        }
-
-        fun fromPolls(polls: List<Poll>): List<PollResponse> {
-            return polls.map {
-                fromPoll(it)
-            }
         }
     }
 }

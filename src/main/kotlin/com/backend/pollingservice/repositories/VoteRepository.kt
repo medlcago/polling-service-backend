@@ -1,7 +1,5 @@
 package com.backend.pollingservice.repositories
 
-import com.backend.pollingservice.entities.Poll
-import com.backend.pollingservice.entities.User
 import com.backend.pollingservice.entities.Vote
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
@@ -13,9 +11,11 @@ import java.util.*
 
 @Repository
 interface VoteRepository : JpaRepository<Vote, UUID> {
-    fun findAllByPollAndUser(poll: Poll, user: User): List<Vote>
-
-    fun deleteAllByPollIdAndUserId(pollId: UUID, userId: UUID): Int
+    @Query("SELECT * FROM votes WHERE poll_id = :pollId AND user_id = :userId", nativeQuery = true)
+    fun findAllByPollIdAndUserId(
+        @Param("pollId") pollId: UUID,
+        @Param("userId") userId: UUID
+    ): List<Vote>
 
     @Modifying
     @Query(
@@ -30,4 +30,9 @@ interface VoteRepository : JpaRepository<Vote, UUID> {
         @Param("pollId") pollId: UUID,
         @Param("optionIds") optionIds: Array<UUID>
     )
+
+    @Query("SELECT v.option.id FROM Vote v WHERE v.poll.id = :pollId AND v.user.id = :userId")
+    fun findOptionIdsByPollIdAndUserId(@Param("pollId") pollId: UUID, @Param("userId") userId: UUID): List<UUID>
+
+    fun findAllByPollIdInAndUserId(pollIds: List<UUID>, userId: UUID): List<Vote>
 }

@@ -12,7 +12,6 @@ import com.backend.pollingservice.exceptions.BadRequestException
 import com.backend.pollingservice.exceptions.NotFoundException
 import com.backend.pollingservice.repositories.PollRepository
 import com.backend.pollingservice.repositories.VoteRepository
-import jakarta.persistence.EntityManager
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
@@ -23,7 +22,6 @@ import java.util.*
 class PollService(
     private val pollRepository: PollRepository,
     private val voteRepository: VoteRepository,
-    private val entityManager: EntityManager,
 ) {
     @Throws(BadRequestException::class)
     fun createPoll(user: User, request: CreatePollRequest): PollResponse {
@@ -42,25 +40,47 @@ class PollService(
         }
 
         val result = pollRepository.save(poll)
-        return PollResponse.fromPoll(result)
+        return PollResponse.fromPoll(result, emptyList())
     }
 
-    fun getPolls(limit: Int, offset: Int): PaginatedResponse<PollResponse> {
+    fun getPolls(limit: Int, offset: Int, user: User? = null): PaginatedResponse<PollResponse> {
         val pageNumber = offset / limit
         val pageable = PageRequest.of(pageNumber, limit, Sort.by(Sort.Direction.ASC, "createdAt"))
 
-        val polls = pollRepository.findAll(pageable)
-        val result = PollResponse.fromPolls(polls.content)
+        val pollsPage = pollRepository.findAll(pageable)
+        val polls = pollsPage.content
+
+        val pollIds = polls.map { it.id!! }
+
+        val userVotesByPoll: Map<UUID, List<UUID>> = if (user != null) {
+            voteRepository.findAllByPollIdInAndUserId(pollIds, user.id!!)
+                .groupBy({ it.poll.id!! }, { it.option.id!! })
+        } else {
+            emptyMap()
+        }
+
+        val result = polls.map { poll ->
+            val selectedOptionIds = userVotesByPoll.getOrDefault(poll.id, emptyList())
+            PollResponse.fromPoll(poll, selectedOptionIds)
+        }
+
         return PaginatedResponse(
-            total = polls.totalElements,
+            total = pollsPage.totalElements,
             result = result
         )
     }
 
     @Throws(NotFoundException::class)
-    fun getPoll(id: UUID): PollResponse {
+    fun getPoll(id: UUID, user: User? = null): PollResponse {
         val poll = pollRepository.findById(id).orElseThrow { NotFoundException("Poll not found") }
-        return PollResponse.fromPoll(poll)
+
+        val selectedOptionIds: List<UUID> = if (user != null) {
+            voteRepository.findOptionIdsByPollIdAndUserId(poll.id!!, user.id!!)
+        } else {
+            emptyList()
+        }
+
+        return PollResponse.fromPoll(poll, selectedOptionIds)
     }
 
     @Throws(BadRequestException::class)
@@ -102,7 +122,7 @@ class PollService(
 
     @Transactional
     @Throws(NotFoundException::class, BadRequestException::class)
-    fun votePoll(user: User, pollId: UUID, request: VotePollRequest): PollResponse {
+    fun votePoll(user: User, pollId: UUID, request: VotePollRequest) {
         val poll = pollRepository.findById(pollId).orElseThrow { throw NotFoundException("Poll not found") }
         validateVote(user, poll, request)
 
@@ -111,12 +131,6 @@ class PollService(
             pollId = poll.id!!,
             optionIds = request.options.toTypedArray()
         )
-
-        entityManager.flush()
-        entityManager.clear()
-
-        val result = pollRepository.findById(pollId).orElseThrow { throw NotFoundException("Poll not found") }
-        return PollResponse.fromPoll(result)
     }
 
     @Throws(BadRequestException::class)
@@ -130,7 +144,7 @@ class PollService(
             throw BadRequestException("Invalid options selected")
         }
 
-        val existingVotes = voteRepository.findAllByPollAndUser(poll, user)
+        val existingVotes = voteRepository.findAllByPollIdAndUserId(poll.id!!, user.id!!)
         val hasVoted = existingVotes.isNotEmpty()
 
         if (hasVoted && poll.type != PollType.MULTIPLE_CHOICE) {
@@ -160,10 +174,9 @@ class PollService(
 
     @Transactional
     fun retractVote(user: User, pollId: UUID) {
-        val deletedCount = voteRepository.deleteAllByPollIdAndUserId(pollId, user.id!!)
-        if (deletedCount == 0) {
-            throw NotFoundException("Vote not found")
-        }
+        val votes = voteRepository.findAllByPollIdAndUserId(pollId, user.id!!)
+            .ifEmpty { throw NotFoundException("Vote not found") }
+        voteRepository.deleteAllInBatch(votes)
     }
 
     @Transactional
