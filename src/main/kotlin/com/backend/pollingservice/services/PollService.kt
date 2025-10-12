@@ -43,46 +43,6 @@ class PollService(
         return PollResponse.fromPoll(result, emptyList())
     }
 
-    fun getPolls(limit: Int, offset: Int, user: User? = null): PaginatedResponse<PollResponse> {
-        val pageNumber = offset / limit
-        val pageable = PageRequest.of(pageNumber, limit, Sort.by(Sort.Direction.ASC, "createdAt"))
-
-        val pollsPage = pollRepository.findAll(pageable)
-        val polls = pollsPage.content
-
-        val pollIds = polls.map { it.id!! }
-
-        val userVotesByPoll: Map<UUID, List<UUID>> = if (user != null) {
-            voteRepository.findAllByPollIdInAndUserId(pollIds, user.id!!)
-                .groupBy({ it.poll.id!! }, { it.option.id!! })
-        } else {
-            emptyMap()
-        }
-
-        val result = polls.map { poll ->
-            val selectedOptionIds = userVotesByPoll.getOrDefault(poll.id, emptyList())
-            PollResponse.fromPoll(poll, selectedOptionIds)
-        }
-
-        return PaginatedResponse(
-            total = pollsPage.totalElements,
-            result = result
-        )
-    }
-
-    @Throws(NotFoundException::class)
-    fun getPoll(id: UUID, user: User? = null): PollResponse {
-        val poll = pollRepository.findById(id).orElseThrow { NotFoundException("Poll not found") }
-
-        val selectedOptionIds: List<UUID> = if (user != null) {
-            voteRepository.findOptionIdsByPollIdAndUserId(poll.id!!, user.id!!)
-        } else {
-            emptyList()
-        }
-
-        return PollResponse.fromPoll(poll, selectedOptionIds)
-    }
-
     @Throws(BadRequestException::class)
     private fun validatePoll(request: CreatePollRequest) {
         when (request.type) {
@@ -105,6 +65,49 @@ class PollService(
                     throw BadRequestException("Non-quiz polls must not specify isCorrect")
                 }
             }
+        }
+    }
+
+    fun getPolls(limit: Int, offset: Int, user: User? = null): PaginatedResponse<PollResponse> {
+        val pageNumber = offset / limit
+        val pageable = PageRequest.of(pageNumber, limit, Sort.by(Sort.Direction.ASC, "createdAt"))
+
+        val pollsPage = pollRepository.findAll(pageable)
+        val polls = pollsPage.content
+
+        val result = mapPollsWithUserVotes(polls, user)
+
+        return PaginatedResponse(
+            total = pollsPage.totalElements,
+            result = result
+        )
+    }
+
+    @Throws(NotFoundException::class)
+    fun getPoll(id: UUID, user: User? = null): PollResponse {
+        val poll = pollRepository.findById(id).orElseThrow { NotFoundException("Poll not found") }
+        return mapPollsWithUserVotes(listOf(poll), user).first()
+    }
+
+
+    private fun mapPollsWithUserVotes(
+        polls: List<Poll>,
+        user: User?
+    ): List<PollResponse> {
+        if (polls.isEmpty()) return emptyList()
+
+        val pollIds = polls.mapNotNull { it.id }
+
+        val userVotesByPoll: Map<UUID, List<UUID>> = if (user != null) {
+            voteRepository.findViewByPollIdsAndUserId(pollIds, user.id!!)
+                .groupBy({ it.pollId }, { it.optionId })
+        } else {
+            emptyMap()
+        }
+
+        return polls.map { poll ->
+            val selectedOptionIds = userVotesByPoll.getOrDefault(poll.id, emptyList())
+            PollResponse.fromPoll(poll, selectedOptionIds)
         }
     }
 
