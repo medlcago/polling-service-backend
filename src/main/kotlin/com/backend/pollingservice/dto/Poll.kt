@@ -68,7 +68,7 @@ data class PollResponse(
     val userSelectedOptions: List<UUID>,
 ) {
     companion object {
-        fun fromPoll(poll: Poll, selectedOptionIds: List<UUID>): PollResponse {
+        fun fromPoll(poll: Poll, selectedOptionIds: List<UUID>, hideIsCorrect: Boolean = true): PollResponse {
             return PollResponse(
                 id = poll.id!!,
                 question = poll.question,
@@ -82,7 +82,7 @@ data class PollResponse(
                     PollOptionResponse(
                         id = it.id!!,
                         text = it.text,
-                        isCorrect = it.isCorrect,
+                        isCorrect = it.isCorrect.takeUnless { hideIsCorrect },
                         voteCount = it.voteCount,
                     )
                 },

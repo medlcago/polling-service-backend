@@ -107,7 +107,8 @@ class PollService(
 
         return polls.map { poll ->
             val selectedOptionIds = userVotesByPoll.getOrDefault(poll.id, emptyList())
-            PollResponse.fromPoll(poll, selectedOptionIds)
+            val hideIsCorrect = user == null || user.id != poll.createdBy.id
+            PollResponse.fromPoll(poll, selectedOptionIds, hideIsCorrect)
         }
     }
 
