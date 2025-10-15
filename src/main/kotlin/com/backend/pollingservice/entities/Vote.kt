@@ -9,7 +9,7 @@ import java.util.*
 @Table(
     name = "votes",
     uniqueConstraints = [
-        UniqueConstraint(columnNames = ["user_id", "poll_id", "option_id"])
+        UniqueConstraint(columnNames = ["user_id", "option_id"], name = "uc_votes_user_option")
     ]
 )
 class Vote(
@@ -26,10 +26,6 @@ class Vote(
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     var user: User,
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "poll_id", nullable = false)
-    var poll: Poll,
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "option_id", nullable = false)

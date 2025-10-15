@@ -145,7 +145,6 @@ class PollService(
 
         voteRepository.bulkInsertVotes(
             userId = user.id!!,
-            pollId = poll.id!!,
             optionIds = request.options.toTypedArray()
         )
     }

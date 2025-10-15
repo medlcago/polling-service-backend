@@ -1,0 +1,11 @@
+ALTER TABLE votes
+    DROP CONSTRAINT IF EXISTS FK_VOTES_ON_POLL;
+
+ALTER TABLE votes
+    DROP CONSTRAINT IF EXISTS uc_9e7e8b466a4d440e9cf208851;
+
+ALTER TABLE votes
+    DROP COLUMN IF EXISTS poll_id;
+
+ALTER TABLE votes
+    ADD CONSTRAINT uc_votes_user_option UNIQUE (user_id, option_id);

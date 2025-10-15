@@ -10,7 +10,14 @@ import java.util.*
 
 @Repository
 interface VoteRepository : JpaRepository<Vote, UUID> {
-    @Query("SELECT * FROM votes WHERE poll_id = :pollId AND user_id = :userId", nativeQuery = true)
+    @Query(
+        """
+    SELECT v.*
+    FROM votes v 
+    JOIN poll_options po ON v.option_id = po.id 
+    WHERE po.poll_id = :pollId AND v.user_id = :userId
+""", nativeQuery = true
+    )
     fun findAllByPollIdAndUserId(
         @Param("pollId") pollId: UUID,
         @Param("userId") userId: UUID
@@ -19,14 +26,13 @@ interface VoteRepository : JpaRepository<Vote, UUID> {
     @Modifying
     @Query(
         """
-    INSERT INTO votes (user_id, option_id, poll_id) 
-    SELECT :userId, t.option_id, :pollId
+    INSERT INTO votes (user_id, option_id) 
+    SELECT :userId, t.option_id
     FROM unnest(:optionIds) AS t(option_id)
 """, nativeQuery = true
     )
     fun bulkInsertVotes(
         @Param("userId") userId: UUID,
-        @Param("pollId") pollId: UUID,
         @Param("optionIds") optionIds: Array<UUID>
     )
 
@@ -34,10 +40,11 @@ interface VoteRepository : JpaRepository<Vote, UUID> {
         """
     SELECT 
         v.id as id,
-        v.poll_id as pollId,
+        po.poll_id as pollId,
         v.option_id as optionId
     FROM votes v 
-    WHERE v.poll_id IN (:pollIds) AND v.user_id = :userId
+    JOIN poll_options po ON po.id = v.option_id
+    WHERE po.poll_id IN (:pollIds) AND v.user_id = :userId
 """, nativeQuery = true
     )
     fun findViewByPollIdsAndUserId(pollIds: List<UUID>, userId: UUID): List<View>
