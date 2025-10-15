@@ -23,7 +23,7 @@ class PollControllerV1(
     fun createPoll(
         @Valid @RequestBody request: CreatePollRequest,
         @AuthenticationPrincipal user: UserDetails,
-    ): ApiResponse<PollResponse> {
+    ): ApiResponse<PollResponseDTO> {
         val poll = pollService.createPoll(
             user = user.getUser(),
             request = request,
@@ -36,13 +36,16 @@ class PollControllerV1(
         @RequestParam("limit", defaultValue = "10") @Min(1) @Max(100) limit: Int,
         @RequestParam("offset", defaultValue = "0") @Min(0) offset: Int,
         @AuthenticationPrincipal user: UserDetails?,
-    ): ApiResponse<PaginatedResponse<PollResponse>> {
+    ): ApiResponse<PaginatedResponse<PollResponseDTO>> {
         val polls = pollService.getPolls(limit, offset, user?.getUser())
         return ApiResponse.success(polls)
     }
 
     @GetMapping("/{pollId}")
-    fun getPoll(@PathVariable pollId: UUID, @AuthenticationPrincipal user: UserDetails?): ApiResponse<PollResponse> {
+    fun getPoll(
+        @PathVariable pollId: UUID,
+        @AuthenticationPrincipal user: UserDetails?
+    ): ApiResponse<PollResponseDTO> {
         val poll = pollService.getPoll(pollId, user?.getUser())
         return ApiResponse.success(poll)
     }

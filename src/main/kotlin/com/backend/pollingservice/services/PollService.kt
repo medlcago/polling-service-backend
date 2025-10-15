@@ -2,7 +2,7 @@ package com.backend.pollingservice.services
 
 import com.backend.pollingservice.dto.CreatePollRequest
 import com.backend.pollingservice.dto.PaginatedResponse
-import com.backend.pollingservice.dto.PollResponse
+import com.backend.pollingservice.dto.PollResponseDTO
 import com.backend.pollingservice.dto.VotePollRequest
 import com.backend.pollingservice.entities.Poll
 import com.backend.pollingservice.entities.User
@@ -10,6 +10,8 @@ import com.backend.pollingservice.enums.PollStatus
 import com.backend.pollingservice.enums.PollType
 import com.backend.pollingservice.exceptions.BadRequestException
 import com.backend.pollingservice.exceptions.NotFoundException
+import com.backend.pollingservice.mappers.toDetailedResponse
+import com.backend.pollingservice.mappers.toPublicResponse
 import com.backend.pollingservice.repositories.PollRepository
 import com.backend.pollingservice.repositories.VoteRepository
 import org.springframework.data.domain.PageRequest
@@ -24,7 +26,7 @@ class PollService(
     private val voteRepository: VoteRepository,
 ) {
     @Throws(BadRequestException::class)
-    fun createPoll(user: User, request: CreatePollRequest): PollResponse {
+    fun createPoll(user: User, request: CreatePollRequest): PollResponseDTO {
         validatePoll(request)
 
         val poll = Poll(
@@ -40,7 +42,7 @@ class PollService(
         }
 
         val result = pollRepository.save(poll)
-        return PollResponse.fromPoll(result, emptyList())
+        return result.toDetailedResponse(emptyList())
     }
 
     @Throws(BadRequestException::class)
@@ -68,14 +70,23 @@ class PollService(
         }
     }
 
-    fun getPolls(limit: Int, offset: Int, user: User? = null): PaginatedResponse<PollResponse> {
+    fun getPolls(limit: Int, offset: Int, user: User? = null): PaginatedResponse<PollResponseDTO> {
         val pageNumber = offset / limit
         val pageable = PageRequest.of(pageNumber, limit, Sort.by(Sort.Direction.ASC, "createdAt"))
 
         val pollsPage = pollRepository.findAll(pageable)
         val polls = pollsPage.content
 
-        val result = mapPollsWithUserVotes(polls, user)
+        val userVotesMap = getUserVotesMap(polls, user)
+
+        val result = polls.map {
+            val selectedOptionIds = userVotesMap[it.id].orEmpty()
+            if (it.isCreatedBy(user)) {
+                it.toDetailedResponse(selectedOptionIds)
+            } else {
+                it.toPublicResponse(selectedOptionIds)
+            }
+        }
 
         return PaginatedResponse(
             total = pollsPage.totalElements,
@@ -84,31 +95,33 @@ class PollService(
     }
 
     @Throws(NotFoundException::class)
-    fun getPoll(id: UUID, user: User? = null): PollResponse {
+    fun getPoll(id: UUID, user: User? = null): PollResponseDTO {
         val poll = pollRepository.findById(id).orElseThrow { NotFoundException("Poll not found") }
-        return mapPollsWithUserVotes(listOf(poll), user).first()
+
+        val userVotesMap = getUserVotesMap(listOf(poll), user)
+        val selectedOptionIds = userVotesMap[poll.id].orEmpty()
+
+        return if (poll.isCreatedBy(user)) {
+            poll.toDetailedResponse(selectedOptionIds)
+        } else {
+            poll.toPublicResponse(selectedOptionIds)
+        }
     }
 
 
-    private fun mapPollsWithUserVotes(
+    private fun getUserVotesMap(
         polls: List<Poll>,
         user: User?
-    ): List<PollResponse> {
-        if (polls.isEmpty()) return emptyList()
+    ): Map<UUID, List<UUID>> {
+        if (polls.isEmpty()) return emptyMap()
 
         val pollIds = polls.mapNotNull { it.id }
 
-        val userVotesByPoll: Map<UUID, List<UUID>> = if (user != null) {
+        return if (user != null) {
             voteRepository.findViewByPollIdsAndUserId(pollIds, user.id!!)
                 .groupBy({ it.pollId }, { it.optionId })
         } else {
             emptyMap()
-        }
-
-        return polls.map { poll ->
-            val selectedOptionIds = userVotesByPoll.getOrDefault(poll.id, emptyList())
-            val hideIsCorrect = user == null || user.id != poll.createdBy.id
-            PollResponse.fromPoll(poll, selectedOptionIds, hideIsCorrect)
         }
     }
 

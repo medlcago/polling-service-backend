@@ -70,7 +70,7 @@ class Poll(
         return option
     }
 
-    fun addOptions(vararg optionTexts: String) {
-        optionTexts.forEach { addOption(it) }
+    fun isCreatedBy(user: User?): Boolean {
+        return user != null && createdBy.id == user.id
     }
 }

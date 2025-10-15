@@ -8,12 +8,6 @@ import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import java.util.*
 
-data class VoteView(
-    val id: UUID,
-    val pollId: UUID,
-    val optionId: UUID,
-)
-
 @Repository
 interface VoteRepository : JpaRepository<Vote, UUID> {
     @Query("SELECT * FROM votes WHERE poll_id = :pollId AND user_id = :userId", nativeQuery = true)
@@ -46,5 +40,11 @@ interface VoteRepository : JpaRepository<Vote, UUID> {
     WHERE v.poll_id IN (:pollIds) AND v.user_id = :userId
 """, nativeQuery = true
     )
-    fun findViewByPollIdsAndUserId(pollIds: List<UUID>, userId: UUID): List<VoteView>
+    fun findViewByPollIdsAndUserId(pollIds: List<UUID>, userId: UUID): List<View>
+
+    data class View(
+        val id: UUID,
+        val pollId: UUID,
+        val optionId: UUID,
+    )
 }
