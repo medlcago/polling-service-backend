@@ -86,4 +86,14 @@ class PollControllerV1(
     ) {
         pollService.deletePoll(user.getUser(), pollId)
     }
+
+    @GetMapping("/{pollId}/members")
+    fun getPollMembers(
+        @PathVariable pollId: UUID,
+        @RequestParam("limit", defaultValue = "10") @Min(1) @Max(100) limit: Int,
+        @RequestParam("offset", defaultValue = "0") @Min(0) offset: Int,
+    ): ApiResponse<PaginatedResponse<PollMemberResponseDTO>> {
+        val members = pollService.getPollMembers(pollId, limit, offset)
+        return ApiResponse.success(members)
+    }
 }

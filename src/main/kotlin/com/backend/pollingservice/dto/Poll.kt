@@ -101,3 +101,13 @@ sealed class PollResponseDTO {
 
     ) : PollResponseDTO()
 }
+
+data class PollMemberResponseDTO(
+    @get:JsonProperty("user_id")
+    val userId: UUID,
+
+    val username: String,
+
+    @get:JsonProperty("selected_options")
+    val selectedOptions: String
+)

@@ -1,20 +1,17 @@
 package com.backend.pollingservice.services
 
-import com.backend.pollingservice.dto.CreatePollRequest
-import com.backend.pollingservice.dto.PaginatedResponse
-import com.backend.pollingservice.dto.PollResponseDTO
-import com.backend.pollingservice.dto.VotePollRequest
+import com.backend.pollingservice.dto.*
 import com.backend.pollingservice.entities.Poll
 import com.backend.pollingservice.entities.User
 import com.backend.pollingservice.enums.PollStatus
 import com.backend.pollingservice.enums.PollType
 import com.backend.pollingservice.exceptions.BadRequestException
 import com.backend.pollingservice.exceptions.NotFoundException
+import com.backend.pollingservice.helpers.PageableHelper
 import com.backend.pollingservice.mappers.toDetailedResponse
 import com.backend.pollingservice.mappers.toPublicResponse
 import com.backend.pollingservice.repositories.PollRepository
 import com.backend.pollingservice.repositories.VoteRepository
-import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -71,8 +68,7 @@ class PollService(
     }
 
     fun getPolls(limit: Int, offset: Int, user: User? = null): PaginatedResponse<PollResponseDTO> {
-        val pageNumber = offset / limit
-        val pageable = PageRequest.of(pageNumber, limit, Sort.by(Sort.Direction.ASC, "createdAt"))
+        val pageable = PageableHelper.createPageable(offset, limit, Sort.by(Sort.Direction.DESC, "createdAt"))
 
         val pollsPage = pollRepository.findAll(pageable)
         val polls = pollsPage.content
@@ -199,5 +195,23 @@ class PollService(
     fun deletePoll(user: User, pollId: UUID) {
         val poll = pollRepository.findByIdAndCreatedBy(pollId, user) ?: throw NotFoundException("Poll not found")
         pollRepository.delete(poll)
+    }
+
+    fun getPollMembers(pollId: UUID, limit: Int, offset: Int): PaginatedResponse<PollMemberResponseDTO> {
+        val isAnonymous = pollRepository.isAnonymous(pollId)
+        if (isAnonymous == null || isAnonymous) {
+            return PaginatedResponse(
+                total = 0,
+                result = emptyList(),
+            )
+        }
+
+        val pageable = PageableHelper.createPageable(offset, limit)
+        val membersPage = voteRepository.findAllMembers(pollId, pageable)
+
+        return PaginatedResponse(
+            total = membersPage.totalElements,
+            result = membersPage.content,
+        )
     }
 }
