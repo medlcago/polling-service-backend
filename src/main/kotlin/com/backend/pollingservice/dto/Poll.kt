@@ -45,7 +45,9 @@ sealed class PollOptionResponseDTO {
         val text: String,
 
         @get:JsonProperty("vote_count")
-        val voteCount: Long
+        val voteCount: Long,
+
+        val percent: Double,
     )
 
     data class PublicResponse(
@@ -76,6 +78,9 @@ sealed class PollResponseDTO {
 
         @get:JsonProperty("created_at")
         val createdAt: Instant,
+
+        @get:JsonProperty("total_votes")
+        val totalVotes: Int,
 
         @get:JsonProperty("user_selected_options")
         val userSelectedOptions: List<UUID>,

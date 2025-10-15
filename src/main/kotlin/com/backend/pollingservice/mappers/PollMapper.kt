@@ -17,6 +17,7 @@ fun Poll.toPublicResponse(selectedOptionIds: List<UUID>): PollResponseDTO.Public
             status = status,
             createdBy = createdBy.id!!,
             createdAt = createdAt!!,
+            totalVotes = totalVotes,
             userSelectedOptions = selectedOptionIds,
             options = options.map { it.toPublicResponse() }
         )
@@ -33,6 +34,7 @@ fun Poll.toDetailedResponse(selectedOptionIds: List<UUID>): PollResponseDTO.Deta
             status = status,
             createdBy = createdBy.id!!,
             createdAt = createdAt!!,
+            totalVotes = totalVotes,
             userSelectedOptions = selectedOptionIds,
             options = options.map { it.toDetailedResponse() }
         ),
@@ -44,7 +46,8 @@ fun PollOption.toPublicResponse() = PollOptionResponseDTO.PublicResponse(
     PollOptionResponseDTO.Base(
         id = id!!,
         text = text,
-        voteCount = voteCount
+        voteCount = voteCount,
+        percent = percent,
     )
 )
 
@@ -53,6 +56,7 @@ fun PollOption.toDetailedResponse() = PollOptionResponseDTO.DetailedResponse(
         id = id!!,
         text = text,
         voteCount = voteCount,
+        percent = percent,
     ),
     isCorrect = isCorrect,
 )

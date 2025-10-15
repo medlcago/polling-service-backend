@@ -4,6 +4,7 @@ import com.backend.pollingservice.enums.PollStatus
 import com.backend.pollingservice.enums.PollType
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.Formula
 import org.hibernate.annotations.UpdateTimestamp
 import org.hibernate.annotations.UuidGenerator
 import java.time.Instant
@@ -59,6 +60,9 @@ class Poll(
         columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP"
     )
     var updatedAt: Instant? = null,
+
+    @Formula("(SELECT COUNT(v.id) FROM votes v JOIN poll_options po ON v.option_id = po.id WHERE po.poll_id = id)")
+    var totalVotes: Int = 0,
 ) {
     fun addOption(text: String, isCorrect: Boolean? = null): PollOption {
         val option = PollOption(
