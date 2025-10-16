@@ -1,13 +1,11 @@
-package com.backend.pollingservice.configs
+package com.backend.pollingservice.security
 
-import com.backend.pollingservice.dto.ApiResponse
-import com.backend.pollingservice.extensions.sendJsonResponse
+import com.backend.pollingservice.extensions.forbidden
+import com.backend.pollingservice.extensions.unauthorized
 import com.backend.pollingservice.services.UserService
+import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.http.HttpMethod
-import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.ProviderManager
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider
@@ -18,12 +16,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 
-
 @Configuration
 @EnableWebSecurity
 class SecurityConfiguration(
     private val userService: UserService,
 ) {
+    private val logger = LoggerFactory.getLogger(SecurityConfiguration::class.java)
+
     @Bean
     fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
 
@@ -44,46 +43,21 @@ class SecurityConfiguration(
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests {
-                it.requestMatchers(HttpMethod.POST, "/api/v1/polls/**").authenticated()
-                    .anyRequest().permitAll()
+                it.anyRequest().authenticated()
             }.exceptionHandling {
                 it.authenticationEntryPoint { _, response, authException ->
-                    val apiResponse = ApiResponse.error(
-                        message = authException.message,
-                        errorCode = HttpStatus.UNAUTHORIZED.name
-                    )
-
-                    response.sendJsonResponse(
-                        status = HttpStatus.UNAUTHORIZED,
-                        contentType = MediaType.APPLICATION_JSON_VALUE,
-                        data = apiResponse
-                    )
+                    logger.info("Authentication error: ${authException.message}")
+                    response.unauthorized(authException.message)
                 }
 
                 it.accessDeniedHandler { _, response, authException ->
-                    val apiResponse = ApiResponse.error(
-                        message = authException.message,
-                        errorCode = HttpStatus.FORBIDDEN.name
-                    )
-
-                    response.sendJsonResponse(
-                        status = HttpStatus.FORBIDDEN,
-                        contentType = MediaType.APPLICATION_JSON_VALUE,
-                        data = apiResponse
-                    )
+                    logger.info("Access denied: ${authException.message}")
+                    response.forbidden(authException.message)
                 }
             }.formLogin { it.disable() }.httpBasic {
-                it.authenticationEntryPoint { _, response, authExp ->
-                    val apiResponse = ApiResponse.error(
-                        message = authExp.message,
-                        errorCode = HttpStatus.UNAUTHORIZED.name
-                    )
-
-                    response.sendJsonResponse(
-                        status = HttpStatus.UNAUTHORIZED,
-                        contentType = MediaType.APPLICATION_JSON_VALUE,
-                        data = apiResponse
-                    )
+                it.authenticationEntryPoint { _, response, authException ->
+                    logger.info("HttpBasic | Authentication error: ${authException.message}")
+                    response.unauthorized(authException.message)
                 }
             }
 
