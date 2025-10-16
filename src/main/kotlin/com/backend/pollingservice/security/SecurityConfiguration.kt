@@ -43,7 +43,8 @@ class SecurityConfiguration(
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests {
-                it.anyRequest().authenticated()
+                it.requestMatchers("/api/v1/auth/register").permitAll()
+                    .anyRequest().authenticated()
             }.exceptionHandling {
                 it.authenticationEntryPoint { _, response, authException ->
                     logger.info("Authentication error: ${authException.message}")
