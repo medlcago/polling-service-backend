@@ -18,12 +18,15 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: polling-service-backend
+    env_file:
+      - .env
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DATABASE_NAME}
       SPRING_DATASOURCE_USERNAME: ${DATABASE_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${DATABASE_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
       SERVER_PORT: ${SERVER_PORT}
+      DEBUG: ${DEBUG}
     depends_on:
       - postgres
     ports:
