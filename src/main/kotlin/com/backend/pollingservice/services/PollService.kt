@@ -135,7 +135,7 @@ class PollService(
 
     @Transactional
     @Throws(NotFoundException::class, BadRequestException::class)
-    fun votePoll(user: User, pollId: UUID, request: VotePollRequest) {
+    fun votePoll(user: User, pollId: UUID, request: VotePollRequest): VotePollResponseDTO {
         val poll = pollRepository.findById(pollId).orElseThrow { throw NotFoundException("Poll not found") }
         validateVote(user, poll, request)
 
@@ -143,6 +143,15 @@ class PollService(
             userId = user.id!!,
             optionIds = request.options.toTypedArray()
         )
+
+        if (poll.type != PollType.QUIZ) {
+            return VotePollResponseDTO(id = pollId, isQuiz = false, isCorrect = null)
+        }
+
+        val correctOption = poll.options.first { it.isCorrect == true }.id
+        val selectedOption = request.options.first()
+        val isCorrect = selectedOption == correctOption
+        return VotePollResponseDTO(id = pollId, isQuiz = true, isCorrect = isCorrect)
     }
 
     @Throws(BadRequestException::class)

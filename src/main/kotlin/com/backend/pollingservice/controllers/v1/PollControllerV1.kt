@@ -60,13 +60,13 @@ class PollControllerV1(
     }
 
     @PostMapping("/{pollId}/vote")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
     fun votePoll(
         @PathVariable pollId: UUID,
         @AuthenticationPrincipal user: UserDetails,
         @Valid @RequestBody request: VotePollRequest,
-    ) {
-        pollService.votePoll(user.getUser(), pollId, request)
+    ): ApiResponse<VotePollResponseDTO> {
+        val vote = pollService.votePoll(user.getUser(), pollId, request)
+        return ApiResponse.success(vote)
     }
 
     @PostMapping("/{pollId}/retract")

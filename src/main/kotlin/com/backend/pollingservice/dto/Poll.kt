@@ -111,3 +111,13 @@ data class PollMemberResponseDTO(
     @get:JsonProperty("selected_options")
     val selectedOptions: String
 )
+
+data class VotePollResponseDTO(
+    val id: UUID,
+
+    @get:JsonProperty("is_quiz")
+    val isQuiz: Boolean,
+
+    @get:JsonProperty("is_correct")
+    val isCorrect: Boolean?,
+)
