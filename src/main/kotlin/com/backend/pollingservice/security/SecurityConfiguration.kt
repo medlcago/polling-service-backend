@@ -43,7 +43,12 @@ class SecurityConfiguration(
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests {
-                it.requestMatchers("/api/v1/auth/register").permitAll()
+                it.requestMatchers(
+                    "/api/v1/auth/register",
+                    "/swagger-ui.html",
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**",
+                ).permitAll()
                     .anyRequest().authenticated()
             }.exceptionHandling {
                 it.authenticationEntryPoint { _, response, authException ->

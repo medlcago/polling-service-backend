@@ -7,6 +7,7 @@ import com.backend.pollingservice.mappers.toResponse
 import com.backend.pollingservice.security.UserDetails
 import com.backend.pollingservice.services.AuthService
 import jakarta.validation.Valid
+import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
@@ -16,6 +17,7 @@ class AuthControllerV1(
     private val authService: AuthService,
 ) {
     @PostMapping("/register")
+    @ResponseStatus(HttpStatus.CREATED)
     fun register(@Valid @RequestBody request: UserRegisterRequest): ApiResponse<UserResponseDTO> {
         val user = authService.register(request)
         return ApiResponse.success(user)

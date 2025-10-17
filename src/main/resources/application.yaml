@@ -42,3 +42,19 @@ server:
       charset: utf-8
       enabled: true
       force: true
+
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    filter: true
+    display-request-duration: true
+    enabled: ${DEBUG}
+    persist-authorization: true
+  api-docs:
+    path: /v3/api-docs
+    enabled: ${DEBUG}
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
