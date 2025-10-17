@@ -4,6 +4,7 @@ import jakarta.persistence.*
 import org.hibernate.annotations.Formula
 import org.hibernate.annotations.UuidGenerator
 import java.util.*
+import kotlin.math.roundToInt
 
 @Entity
 @Table(name = "poll_options")
@@ -34,9 +35,9 @@ class PollOption(
     @Formula("(SELECT COUNT(v.id) FROM votes v WHERE v.option_id = id)")
     var voteCount: Long = 0
 ) {
-    val percent: Double
+    val percent: Int
         get() {
-            if (poll.totalVotes == 0) return 0.0
-            return (voteCount * 100.0) / poll.totalVotes
+            if (poll.totalVotes == 0) return 0
+            return ((voteCount * 100.0) / poll.totalVotes).roundToInt()
         }
 }

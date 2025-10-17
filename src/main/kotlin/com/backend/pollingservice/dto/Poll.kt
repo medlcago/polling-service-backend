@@ -47,7 +47,7 @@ sealed class PollOptionResponseDTO {
         @get:JsonProperty("vote_count")
         val voteCount: Long,
 
-        val percent: Double,
+        val percent: Int,
     )
 
     data class PublicResponse(
