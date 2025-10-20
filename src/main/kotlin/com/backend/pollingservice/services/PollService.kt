@@ -195,8 +195,12 @@ class PollService(
 
     @Transactional
     fun retractVote(user: User, pollId: UUID) {
+        val isClosed = pollRepository.isClosed(pollId) ?: throw NotFoundException("Poll not found")
+        if (isClosed) {
+            throw BadRequestException("Poll is closed")
+        }
+
         val votes = voteRepository.findAllByPollIdAndUserId(pollId, user.id!!)
-            .ifEmpty { throw NotFoundException("Vote not found") }
         voteRepository.deleteAllInBatch(votes)
     }
 
@@ -207,8 +211,8 @@ class PollService(
     }
 
     fun getPollMembers(pollId: UUID, limit: Int, offset: Int): PaginatedResponse<PollMemberResponseDTO> {
-        val isAnonymous = pollRepository.isAnonymous(pollId)
-        if (isAnonymous == null || isAnonymous) {
+        val isAnonymous = pollRepository.isAnonymous(pollId) ?: throw NotFoundException("Poll not found")
+        if (isAnonymous) {
             return PaginatedResponse(
                 total = 0,
                 result = emptyList(),

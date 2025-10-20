@@ -25,4 +25,7 @@ interface PollRepository : JpaRepository<Poll, UUID> {
 
     @Query("SELECT p.anonymous FROM Poll p WHERE p.id = :id")
     fun isAnonymous(id: UUID): Boolean?
+
+    @Query("SELECT (p.status = 'CLOSED') FROM Poll p WHERE p.id = :id")
+    fun isClosed(id: UUID): Boolean?
 }
